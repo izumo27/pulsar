@@ -158,7 +158,14 @@ public class AuthenticationOAuth2 implements Authentication, EncodedAuthenticati
         Map<String, String> params = parseAuthParameters(encodedAuthParamString);
         String type = params.getOrDefault(CONFIG_PARAM_TYPE, TYPE_CLIENT_CREDENTIALS);
         if (TYPE_CLIENT_CREDENTIALS.equals(type)) {
-            this.flow = ClientCredentialsFlow.fromParameters(params);
+            if (params.containsKey(TlsClientAuthFlow.CONFIG_PARAM_CERT_FILE)
+                && params.containsKey(TlsClientAuthFlow.CONFIG_PARAM_KEY_FILE)
+               && StringUtils.isNotBlank(params.get(TlsClientAuthFlow.CONFIG_PARAM_CERT_FILE))
+               && StringUtils.isNotBlank(params.get(TlsClientAuthFlow.CONFIG_PARAM_KEY_FILE))) {
+                this.flow = TlsClientAuthFlow.fromParameters(params);
+            } else {
+                this.flow = ClientCredentialsFlow.fromParameters(params);
+            }
         } else {
             throw new IllegalArgumentException("Unsupported authentication type: " + type);
         }
@@ -351,4 +358,3 @@ public class AuthenticationOAuth2 implements Authentication, EncodedAuthenticati
         }
     }
 }
-

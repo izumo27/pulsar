@@ -67,8 +67,14 @@ abstract class FlowBase implements Flow {
         this.wellKnownMetadataPath = wellKnownMetadataPath;
     }
 
-    private AsyncHttpClient defaultHttpClient(Duration readTimeout, Duration connectTimeout,
-                                              String trustCertsFilePath) {
+    protected FlowBase(URL issuerUrl, AsyncHttpClient httpClient, String wellKnownMetadataPath) {
+        this.issuerUrl = issuerUrl;
+        this.httpClient = httpClient;
+        this.wellKnownMetadataPath = wellKnownMetadataPath;
+    }
+
+    protected static AsyncHttpClient defaultHttpClient(Duration readTimeout, Duration connectTimeout,
+                                                       String trustCertsFilePath) {
         DefaultAsyncHttpClientConfig.Builder confBuilder = new DefaultAsyncHttpClientConfig.Builder();
         confBuilder.setCookieStore(null);
         confBuilder.setUseProxyProperties(true);
@@ -91,7 +97,7 @@ abstract class FlowBase implements Flow {
         return new DefaultAsyncHttpClient(confBuilder.build());
     }
 
-    private int getParameterDurationToMillis(String name, Duration value, Duration defaultValue) {
+    protected static int getParameterDurationToMillis(String name, Duration value, Duration defaultValue) {
         Duration duration;
         if (value == null) {
                 log.debug().attr("name", name)
@@ -104,6 +110,19 @@ abstract class FlowBase implements Flow {
         }
 
         return (int) duration.toMillis();
+    }
+
+    protected static long getParameterDurationToSeconds(String name, Duration value, Duration defaultValue) {
+        Duration duration;
+        if (value == null) {
+            log.info("Configuration for [{}] is using the default value: [{}]", name, defaultValue);
+            duration = defaultValue;
+        } else {
+            log.info("Configuration for [{}] is: [{}]", name, value);
+            duration = value;
+        }
+
+        return duration.getSeconds();
     }
 
     public void initialize() throws PulsarClientException {

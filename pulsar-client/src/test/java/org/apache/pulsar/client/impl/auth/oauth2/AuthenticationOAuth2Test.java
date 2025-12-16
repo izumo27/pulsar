@@ -225,6 +225,55 @@ public class AuthenticationOAuth2Test {
     }
 
     @Test
+    public void testConfigureWithTlsClientAuth() throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("type", "client_credentials");
+        params.put("clientId", "test-client");
+        params.put("tlsCertFile", "/path/to/cert.pem");
+        params.put("tlsKeyFile", "/path/to/key.pem");
+        params.put("issuerUrl", "http://localhost");
+        ObjectMapper mapper = new ObjectMapper();
+        String authParams = mapper.writeValueAsString(params);
+        this.auth.configure(authParams);
+        assertNotNull(this.auth.flow);
+        assertEquals(this.auth.flow.getClass(), TlsClientAuthFlow.class);
+    }
+
+    @Test
+    public void testConfigureWithEmptyTlsClientAuthValues() throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("type", "client_credentials");
+        params.put("privateKey", "data:base64,e30=");
+        params.put("clientId", "test-client");
+        params.put("tlsCertFile", "");
+        params.put("tlsKeyFile", "");
+        params.put("issuerUrl", "http://localhost");
+        ObjectMapper mapper = new ObjectMapper();
+        String authParams = mapper.writeValueAsString(params);
+        this.auth.configure(authParams);
+        assertNotNull(this.auth.flow);
+        assertEquals(this.auth.flow.getClass(), ClientCredentialsFlow.class);
+    }
+
+    @Test
+    public void testConfigureWithTlsClientAuthAndOptionalParams() throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("type", "client_credentials");
+        params.put("clientId", "test-client");
+        params.put("tlsCertFile", "/path/to/cert.pem");
+        params.put("tlsKeyFile", "/path/to/key.pem");
+        params.put("issuerUrl", "http://localhost");
+        params.put("audience", "test-audience");
+        params.put("scope", "test-scope");
+        params.put("autoCertRefreshDuration", "PT300S");
+        ObjectMapper mapper = new ObjectMapper();
+        String authParams = mapper.writeValueAsString(params);
+        this.auth.configure(authParams);
+        assertNotNull(this.auth.flow);
+        assertEquals(this.auth.flow.getClass(), TlsClientAuthFlow.class);
+    }
+
+    @Test
     public void testStart() throws Exception {
         this.auth.start();
         verify(this.flow).initialize();

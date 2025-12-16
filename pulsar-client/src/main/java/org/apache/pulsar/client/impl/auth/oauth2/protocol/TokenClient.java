@@ -53,13 +53,16 @@ public class TokenClient implements ClientCredentialsExchanger {
      * Constructing http request parameters.
      *
      * @param req object with relevant request parameters
+     * @param includeSecret whether to include client_secret in the request body
      * @return Generate the final request body from a map.
      */
-    String buildClientCredentialsBody(ClientCredentialsExchangeRequest req) {
+    String buildClientCredentialsBody(ClientCredentialsExchangeRequest req, boolean includeSecret) {
         Map<String, String> bodyMap = new TreeMap<>();
         bodyMap.put("grant_type", "client_credentials");
         bodyMap.put("client_id", req.getClientId());
-        bodyMap.put("client_secret", req.getClientSecret());
+        if (includeSecret) {
+            bodyMap.put("client_secret", req.getClientSecret());
+        }
         // Only set audience and scope if they are non-empty.
         if (!StringUtils.isBlank(req.getAudience())) {
             bodyMap.put("audience", req.getAudience());
@@ -82,8 +85,31 @@ public class TokenClient implements ClientCredentialsExchanger {
      */
     public TokenResult exchangeClientCredentials(ClientCredentialsExchangeRequest req)
             throws TokenExchangeException, IOException {
-        String body = buildClientCredentialsBody(req);
+        String body = buildClientCredentialsBody(req, true);
+        return executeTokenRequest(body);
+    }
 
+    /**
+     * Performs a token exchange using TLS client authentication.
+     *
+     * @param req the client credentials request details for TLS client auth
+     * @return a token result
+     * @throws TokenExchangeException
+     */
+    public TokenResult exchangeTlsClientAuth(ClientCredentialsExchangeRequest req)
+            throws TokenExchangeException, IOException {
+        String body = buildClientCredentialsBody(req, false);
+        return executeTokenRequest(body);
+    }
+
+    /**
+     * Executes a token request with the given body.
+     *
+     * @param body the request body
+     * @return a token result
+     * @throws TokenExchangeException
+     */
+    private TokenResult executeTokenRequest(String body) throws TokenExchangeException, IOException {
         try {
 
             Response res = httpClient.preparePost(tokenUrl.toString())

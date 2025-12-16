@@ -49,7 +49,7 @@ public class TokenClientTest {
                 .clientSecret("test-client-secret")
                 .scope("test-scope")
                 .build();
-        String body = tokenClient.buildClientCredentialsBody(request);
+        String body = tokenClient.buildClientCredentialsBody(request, true);
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -80,7 +80,7 @@ public class TokenClientTest {
                 .clientId("test-client-id")
                 .clientSecret("test-client-secret")
                 .build();
-        String body = tokenClient.buildClientCredentialsBody(request);
+        String body = tokenClient.buildClientCredentialsBody(request, true);
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -97,6 +97,68 @@ public class TokenClientTest {
         tokenResult.setIdToken("test-id");
         when(response.getResponseBodyAsBytes()).thenReturn(new Gson().toJson(tokenResult).getBytes());
         TokenResult tr = tokenClient.exchangeClientCredentials(request);
+        assertNotNull(tr);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void exchangeTlsClientAuthSuccessTest() throws
+            IOException, TokenExchangeException, ExecutionException, InterruptedException {
+        DefaultAsyncHttpClient defaultAsyncHttpClient = mock(DefaultAsyncHttpClient.class);
+        URL url = new URL("http://localhost");
+        TokenClient tokenClient = new TokenClient(url, defaultAsyncHttpClient);
+        ClientCredentialsExchangeRequest request = ClientCredentialsExchangeRequest.builder()
+                .clientId("test-client-id")
+                .audience("test-audience")
+                .scope("test-scope")
+                .build();
+        String body = tokenClient.buildClientCredentialsBody(request, false);
+        BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
+        Response response = mock(Response.class);
+        ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
+        when(defaultAsyncHttpClient.preparePost(url.toString())).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.setHeader("Accept", "application/json")).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.setHeader("Content-Type",
+                "application/x-www-form-urlencoded")).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.setBody(body)).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.execute()).thenReturn(listenableFuture);
+        when(listenableFuture.get()).thenReturn(response);
+        when(response.getStatusCode()).thenReturn(200);
+        TokenResult tokenResult = new TokenResult();
+        tokenResult.setAccessToken("test-access-token");
+        tokenResult.setIdToken("test-id");
+        when(response.getResponseBodyAsBytes()).thenReturn(new Gson().toJson(tokenResult).getBytes());
+        TokenResult tr = tokenClient.exchangeTlsClientAuth(request);
+        assertNotNull(tr);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void exchangeTlsClientAuthSuccessWithoutOptionalParamsTest() throws
+            IOException, TokenExchangeException, ExecutionException, InterruptedException {
+        DefaultAsyncHttpClient defaultAsyncHttpClient = mock(DefaultAsyncHttpClient.class);
+        URL url = new URL("http://localhost");
+        TokenClient tokenClient = new TokenClient(url, defaultAsyncHttpClient);
+        ClientCredentialsExchangeRequest request = ClientCredentialsExchangeRequest.builder()
+                .clientId("test-client-id")
+                .build();
+        String body = tokenClient.buildClientCredentialsBody(request, false);
+        BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
+        Response response = mock(Response.class);
+        ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
+        when(defaultAsyncHttpClient.preparePost(url.toString())).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.setHeader("Accept", "application/json")).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.setHeader("Content-Type",
+                "application/x-www-form-urlencoded")).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.setBody(body)).thenReturn(boundRequestBuilder);
+        when(boundRequestBuilder.execute()).thenReturn(listenableFuture);
+        when(listenableFuture.get()).thenReturn(response);
+        when(response.getStatusCode()).thenReturn(200);
+        TokenResult tokenResult = new TokenResult();
+        tokenResult.setAccessToken("test-access-token");
+        tokenResult.setIdToken("test-id");
+        when(response.getResponseBodyAsBytes()).thenReturn(new Gson().toJson(tokenResult).getBytes());
+        TokenResult tr = tokenClient.exchangeTlsClientAuth(request);
         assertNotNull(tr);
     }
 }
