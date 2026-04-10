@@ -67,14 +67,8 @@ abstract class FlowBase implements Flow {
         this.wellKnownMetadataPath = wellKnownMetadataPath;
     }
 
-    protected FlowBase(URL issuerUrl, AsyncHttpClient httpClient, String wellKnownMetadataPath) {
-        this.issuerUrl = issuerUrl;
-        this.httpClient = httpClient;
-        this.wellKnownMetadataPath = wellKnownMetadataPath;
-    }
-
-    protected static AsyncHttpClient defaultHttpClient(Duration readTimeout, Duration connectTimeout,
-                                                       String trustCertsFilePath) {
+    private AsyncHttpClient defaultHttpClient(Duration readTimeout, Duration connectTimeout,
+                                              String trustCertsFilePath) {
         DefaultAsyncHttpClientConfig.Builder confBuilder = new DefaultAsyncHttpClientConfig.Builder();
         confBuilder.setCookieStore(null);
         confBuilder.setUseProxyProperties(true);
@@ -97,15 +91,15 @@ abstract class FlowBase implements Flow {
         return new DefaultAsyncHttpClient(confBuilder.build());
     }
 
-    protected static int getParameterDurationToMillis(String name, Duration value, Duration defaultValue) {
+    protected int getParameterDurationToMillis(String name, Duration value, Duration defaultValue) {
         return (int) getParameterDuration(name, value, defaultValue).toMillis();
     }
 
-    protected static long getParameterDurationToSeconds(String name, Duration value, Duration defaultValue) {
+    protected long getParameterDurationToSeconds(String name, Duration value, Duration defaultValue) {
         return getParameterDuration(name, value, defaultValue).getSeconds();
     }
 
-    private static Duration getParameterDuration(String name, Duration value, Duration defaultValue) {
+    private Duration getParameterDuration(String name, Duration value, Duration defaultValue) {
         Duration duration;
         if (value == null) {
                 log.debug().attr("name", name)
