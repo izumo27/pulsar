@@ -98,6 +98,14 @@ abstract class FlowBase implements Flow {
     }
 
     protected static int getParameterDurationToMillis(String name, Duration value, Duration defaultValue) {
+        return (int) getParameterDuration(name, value, defaultValue).toMillis();
+    }
+
+    protected static long getParameterDurationToSeconds(String name, Duration value, Duration defaultValue) {
+        return getParameterDuration(name, value, defaultValue).getSeconds();
+    }
+
+    private static Duration getParameterDuration(String name, Duration value, Duration defaultValue) {
         Duration duration;
         if (value == null) {
                 log.debug().attr("name", name)
@@ -108,21 +116,7 @@ abstract class FlowBase implements Flow {
                 log.debug().attr("name", name).attr("value", value).log("Configuration");
             duration = value;
         }
-
-        return (int) duration.toMillis();
-    }
-
-    protected static long getParameterDurationToSeconds(String name, Duration value, Duration defaultValue) {
-        Duration duration;
-        if (value == null) {
-            log.info("Configuration for [{}] is using the default value: [{}]", name, defaultValue);
-            duration = defaultValue;
-        } else {
-            log.info("Configuration for [{}] is: [{}]", name, value);
-            duration = value;
-        }
-
-        return duration.getSeconds();
+        return duration;
     }
 
     public void initialize() throws PulsarClientException {

@@ -81,7 +81,7 @@ class ClientCredentialsFlow extends FlowBase {
     public static ClientCredentialsFlow fromParameters(Map<String, String> params) {
         URL issuerUrl = parseParameterUrl(params, CONFIG_PARAM_ISSUER_URL);
         String privateKeyUrl = parseParameterString(params, CONFIG_PARAM_KEY_FILE);
-        // These are optional parameters, so we only perform a get
+        // These are optional parameters, so we allow null values
         String scope = params.get(CONFIG_PARAM_SCOPE);
         String audience = params.get(CONFIG_PARAM_AUDIENCE);
         Duration connectTimeout = parseParameterDuration(params, CONFIG_PARAM_CONNECT_TIMEOUT);

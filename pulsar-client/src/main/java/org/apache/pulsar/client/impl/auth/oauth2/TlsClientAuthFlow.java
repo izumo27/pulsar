@@ -83,11 +83,11 @@ class TlsClientAuthFlow extends FlowBase {
     private TlsClientAuthFlow(URL issuerUrl, String clientId, String audience, String scope,
                               String wellKnownMetadataPath, Duration autoCertRefreshDuration,
                               TlsHttpClientContext tlsHttpClientContext) {
-        super(issuerUrl, tlsHttpClientContext.httpClient, wellKnownMetadataPath);
+        super(issuerUrl, tlsHttpClientContext.httpClient(), wellKnownMetadataPath);
         this.clientId = clientId == null ? DEFAULT_CLIENT_ID : clientId;
         this.audience = audience;
         this.scope = scope;
-        this.sslFactory = tlsHttpClientContext.sslFactory;
+        this.sslFactory = tlsHttpClientContext.sslFactory();
         this.autoCertRefreshSeconds = getParameterDurationToSeconds(CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION,
                 autoCertRefreshDuration, DEFAULT_AUTO_CERT_REFRESH_DURATION);
     }
@@ -105,7 +105,7 @@ class TlsClientAuthFlow extends FlowBase {
         String clientId = params.getOrDefault(CONFIG_PARAM_CLIENT_ID, DEFAULT_CLIENT_ID);
         String certFile = parseParameterString(params, CONFIG_PARAM_CERT_FILE);
         String keyFile = parseParameterString(params, CONFIG_PARAM_KEY_FILE);
-        // These are optional parameters, so we only perform a get
+        // These are optional parameters, so we allow null values
         String scope = params.get(CONFIG_PARAM_SCOPE);
         String audience = params.get(CONFIG_PARAM_AUDIENCE);
         Duration connectTimeout = parseParameterDuration(params, CONFIG_PARAM_CONNECT_TIMEOUT);
@@ -234,13 +234,5 @@ class TlsClientAuthFlow extends FlowBase {
         }
     }
 
-    private static final class TlsHttpClientContext {
-        private final AsyncHttpClient httpClient;
-        private final PulsarSslFactory sslFactory;
-
-        private TlsHttpClientContext(AsyncHttpClient httpClient, PulsarSslFactory sslFactory) {
-            this.httpClient = httpClient;
-            this.sslFactory = sslFactory;
-        }
-    }
+    private record TlsHttpClientContext(AsyncHttpClient httpClient, PulsarSslFactory sslFactory) { }
 }
