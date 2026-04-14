@@ -63,14 +63,14 @@ class TlsClientAuthFlow extends FlowBase {
     private static final long serialVersionUID = 1L;
 
     private final String clientId;
+    private final String certFile;
+    private final String keyFile;
     private final String audience;
     private final String scope;
     private final long autoCertRefreshSeconds; // Certificate refresh interval in seconds
     private final Duration connectTimeout;
     private final Duration readTimeout;
     private final String trustCertsFilePath;
-    private final String certFile;
-    private final String keyFile;
 
     private transient TokenClient exchanger;
     private transient ScheduledExecutorService scheduler;
@@ -85,15 +85,15 @@ class TlsClientAuthFlow extends FlowBase {
                              String wellKnownMetadataPath, Duration autoCertRefreshDuration) {
         super(issuerUrl, connectTimeout, readTimeout, trustCertsFilePath, wellKnownMetadataPath);
         this.clientId = clientId == null ? DEFAULT_CLIENT_ID : clientId;
+        this.certFile = certFile;
+        this.keyFile = keyFile;
         this.audience = audience;
         this.scope = scope;
-        this.autoCertRefreshSeconds = getParameterDurationToSeconds(CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION,
-                autoCertRefreshDuration, DEFAULT_AUTO_CERT_REFRESH_DURATION);
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
         this.trustCertsFilePath = trustCertsFilePath;
-        this.certFile = certFile;
-        this.keyFile = keyFile;
+        this.autoCertRefreshSeconds = getParameterDurationToSeconds(CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION,
+                autoCertRefreshDuration, DEFAULT_AUTO_CERT_REFRESH_DURATION);
     }
 
     /**

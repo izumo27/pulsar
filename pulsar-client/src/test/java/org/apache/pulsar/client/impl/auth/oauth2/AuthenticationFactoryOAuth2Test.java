@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.client.impl.auth.oauth2;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import java.io.IOException;
 import java.net.URL;
@@ -44,6 +45,45 @@ public class AuthenticationFactoryOAuth2Test {
                              .trustCertsFilePath(trustCertsFilePath)
                              .wellKnownMetadataPath(wellKnownMetadataPath).build()) {
             assertTrue(authentication instanceof AuthenticationOAuth2);
+            assertEquals(((AuthenticationOAuth2) authentication).flow.getClass(), ClientCredentialsFlow.class);
+        }
+    }
+
+    @Test
+    public void testBuilderWithTlsClientAuthFlow() throws IOException {
+        URL issuerUrl = new URL("http://localhost");
+        String clientId = "test-client";
+        String tlsCertFile = "/path/to/cert.pem";
+        String tlsKeyFile = "/path/to/key.pem";
+        String audience = "audience";
+        String scope = "scope";
+        Duration autoCertRefreshDuration = Duration.ofSeconds(123);
+        try (Authentication authentication =
+                     AuthenticationFactoryOAuth2.clientCredentialsBuilder().issuerUrl(issuerUrl)
+                             .clientId(clientId)
+                             .tlsCertFile(tlsCertFile)
+                             .tlsKeyFile(tlsKeyFile)
+                             .audience(audience)
+                             .scope(scope)
+                             .autoCertRefreshDuration(autoCertRefreshDuration)
+                             .build()) {
+            assertTrue(authentication instanceof AuthenticationOAuth2);
+            assertEquals(((AuthenticationOAuth2) authentication).flow.getClass(), TlsClientAuthFlow.class);
+        }
+    }
+
+    @Test
+    public void testBuilderWithEmptyTlsClientAuth() throws IOException {
+        URL issuerUrl = new URL("http://localhost");
+        URL credentialsUrl = new URL("http://localhost");
+        try (Authentication authentication =
+                     AuthenticationFactoryOAuth2.clientCredentialsBuilder().issuerUrl(issuerUrl)
+                             .credentialsUrl(credentialsUrl)
+                             .tlsCertFile("")
+                             .tlsKeyFile("")
+                             .build()) {
+            assertTrue(authentication instanceof AuthenticationOAuth2);
+            assertEquals(((AuthenticationOAuth2) authentication).flow.getClass(), ClientCredentialsFlow.class);
         }
     }
 

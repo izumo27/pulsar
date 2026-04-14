@@ -21,6 +21,7 @@ package org.apache.pulsar.client.impl.auth.oauth2;
 import java.net.URL;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.client.api.Authentication;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.DefaultMetadataResolver;
 
@@ -92,12 +93,16 @@ public final class AuthenticationFactoryOAuth2 {
 
         private URL issuerUrl;
         private URL credentialsUrl;
+        private String clientId;
+        private String tlsCertFile;
+        private String tlsKeyFile;
         private String audience;
         private String scope;
         private Duration connectTimeout;
         private Duration readTimeout;
         private String trustCertsFilePath;
         private String wellKnownMetadataPath;
+        private Duration autoCertRefreshDuration;
         private double earlyTokenRefreshPercent = AuthenticationOAuth2.EARLY_TOKEN_REFRESH_PERCENT_DEFAULT;
         private ScheduledExecutorService scheduler;
 
@@ -116,13 +121,48 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
-         * Required credentials URL.
+         * Required (when using client_secret) credentials URL.
          *
          * @param credentialsUrl the credentials URL
          * @return the builder
          */
         public ClientCredentialsBuilder credentialsUrl(URL credentialsUrl) {
             this.credentialsUrl = credentialsUrl;
+            return this;
+        }
+
+        /**
+         * Required (when using tls_client_auth) path to the file for a client certificate.
+         *
+         * @param tlsCertFile the path to the file for a client certificate
+         * @return the builder
+         */
+        public ClientCredentialsBuilder tlsCertFile(String tlsCertFile) {
+            this.tlsCertFile = tlsCertFile;
+            return this;
+        }
+
+        /**
+         * Required (when using tls_client_auth) path to the file for a client private key.
+         *
+         * @param tlsKeyFile the path to the file for a client private key
+         * @return the builder
+         */
+        public ClientCredentialsBuilder tlsKeyFile(String tlsKeyFile) {
+            this.tlsKeyFile = tlsKeyFile;
+            return this;
+        }
+
+        /**
+         * Optional client identifier issued by the authorization server.
+         * This parameter can only be set when tls_client_auth.
+         * Defaults to {@code pulsar-client} when not provided.
+         *
+         * @param clientId the client identifier
+         * @return the builder
+         */
+        public ClientCredentialsBuilder clientId(String clientId) {
+            this.clientId = clientId;
             return this;
         }
 
@@ -197,6 +237,18 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
+         * Optional Certificate refresh interval in seconds
+         * This parameter can only be set when tls_client_auth.
+         *
+         * @param autoCertRefreshDuration the Certificate refresh interval
+         * @return the builder
+         */
+        public ClientCredentialsBuilder autoCertRefreshDuration(Duration autoCertRefreshDuration) {
+            this.autoCertRefreshDuration = autoCertRefreshDuration;
+            return this;
+        }
+
+        /**
          * The fraction of the token's {@code expires_in} time at which the client starts attempting
          * a background refresh. Must be greater than 0. Values &ge; 1 disable early refresh (the default).
          *
@@ -236,16 +288,33 @@ public final class AuthenticationFactoryOAuth2 {
          * @return an Authentication object
          */
         public Authentication build() {
-            ClientCredentialsFlow flow = ClientCredentialsFlow.builder()
-                    .issuerUrl(issuerUrl)
-                    .privateKey(credentialsUrl == null ? null : credentialsUrl.toExternalForm())
-                    .audience(audience)
-                    .scope(scope)
-                    .connectTimeout(connectTimeout)
-                    .readTimeout(readTimeout)
-                    .trustCertsFilePath(trustCertsFilePath)
-                    .wellKnownMetadataPath(wellKnownMetadataPath)
-                    .build();
+            Flow flow;
+            if (StringUtils.isNotBlank(tlsCertFile) && StringUtils.isNotBlank(tlsKeyFile)) {
+                flow = TlsClientAuthFlow.builder()
+                        .issuerUrl(issuerUrl)
+                        .clientId(clientId)
+                        .certFile(tlsCertFile)
+                        .keyFile(tlsKeyFile)
+                        .audience(audience)
+                        .scope(scope)
+                        .connectTimeout(connectTimeout)
+                        .readTimeout(readTimeout)
+                        .trustCertsFilePath(trustCertsFilePath)
+                        .wellKnownMetadataPath(wellKnownMetadataPath)
+                        .autoCertRefreshDuration(autoCertRefreshDuration)
+                        .build();
+            } else {
+                flow = ClientCredentialsFlow.builder()
+                        .issuerUrl(issuerUrl)
+                        .privateKey(credentialsUrl == null ? null : credentialsUrl.toExternalForm())
+                        .audience(audience)
+                        .scope(scope)
+                        .connectTimeout(connectTimeout)
+                        .readTimeout(readTimeout)
+                        .trustCertsFilePath(trustCertsFilePath)
+                        .wellKnownMetadataPath(wellKnownMetadataPath)
+                        .build();
+            }
             return new AuthenticationOAuth2(flow, earlyTokenRefreshPercent, scheduler);
         }
 
