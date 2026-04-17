@@ -111,6 +111,42 @@ public class AuthenticationOAuth2Test {
         assertNotNull(this.auth.flow);
     }
 
+    @Test
+    public void testConfigureWithTlsClientAuth() throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("type", "client_credentials");
+        params.put(AuthenticationOAuth2.CONFIG_PARAM_TOKEN_ENDPOINT_AUTH_METHOD,
+                TokenEndpointAuthMethod.TLS_CLIENT_AUTH.value());
+        params.put("clientId", "test-client");
+        params.put("tlsCertFile", "/path/to/cert.pem");
+        params.put("tlsKeyFile", "/path/to/key.pem");
+        params.put("issuerUrl", "http://localhost");
+        ObjectMapper mapper = new ObjectMapper();
+        String authParams = mapper.writeValueAsString(params);
+        OAuth2MockHttpClient.withMockedSslFactory(() -> {
+            this.auth.configure(authParams);
+            assertNotNull(this.auth.flow);
+            assertEquals(this.auth.flow.getClass(), TlsClientAuthFlow.class);
+        });
+    }
+
+    @Test
+    public void testConfigureCredentialsWithTlsValues() throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("type", "client_credentials");
+        params.put("privateKey", "data:base64,e30=");
+        params.put("tlsCertFile", "/path/to/cert.pem");
+        params.put("tlsKeyFile", "/path/to/key.pem");
+        params.put("issuerUrl", "http://localhost");
+        ObjectMapper mapper = new ObjectMapper();
+        String authParams = mapper.writeValueAsString(params);
+        OAuth2MockHttpClient.withMockedSslFactory(() -> {
+            this.auth.configure(authParams);
+            assertNotNull(this.auth.flow);
+            assertEquals(this.auth.flow.getClass(), ClientCredentialsFlow.class);
+        });
+    }
+
     // ----- configure() via default constructor -----
 
     @Test
@@ -223,59 +259,6 @@ public class AuthenticationOAuth2Test {
         params.put("issuerUrl", "http://localhost");
         params.put(AuthenticationOAuth2.CONFIG_PARAM_EARLY_TOKEN_REFRESH_PERCENT, earlyRefreshValue);
         return new ObjectMapper().writeValueAsString(params);
-    }
-
-    @Test
-    public void testConfigureWithTlsClientAuth() throws Exception {
-        Map<String, String> params = new HashMap<>();
-        params.put("type", "client_credentials");
-        params.put(AuthenticationOAuth2.CONFIG_PARAM_TOKEN_ENDPOINT_AUTH_METHOD,
-                TokenEndpointAuthMethod.TLS_CLIENT_AUTH.value());
-        params.put("clientId", "test-client");
-        params.put("tlsCertFile", "/path/to/cert.pem");
-        params.put("tlsKeyFile", "/path/to/key.pem");
-        params.put("issuerUrl", "http://localhost");
-        ObjectMapper mapper = new ObjectMapper();
-        String authParams = mapper.writeValueAsString(params);
-        this.auth.configure(authParams);
-        assertNotNull(this.auth.flow);
-        assertEquals(this.auth.flow.getClass(), TlsClientAuthFlow.class);
-    }
-
-    @Test
-    public void testConfigureWithEmptyTlsClientAuthValues() throws Exception {
-        Map<String, String> params = new HashMap<>();
-        params.put("type", "client_credentials");
-        params.put("privateKey", "data:base64,e30=");
-        params.put("clientId", "test-client");
-        params.put("tlsCertFile", "");
-        params.put("tlsKeyFile", "");
-        params.put("issuerUrl", "http://localhost");
-        ObjectMapper mapper = new ObjectMapper();
-        String authParams = mapper.writeValueAsString(params);
-        this.auth.configure(authParams);
-        assertNotNull(this.auth.flow);
-        assertEquals(this.auth.flow.getClass(), ClientCredentialsFlow.class);
-    }
-
-    @Test
-    public void testConfigureWithTlsClientAuthAndOptionalParams() throws Exception {
-        Map<String, String> params = new HashMap<>();
-        params.put("type", "client_credentials");
-        params.put(AuthenticationOAuth2.CONFIG_PARAM_TOKEN_ENDPOINT_AUTH_METHOD,
-                TokenEndpointAuthMethod.TLS_CLIENT_AUTH.value());
-        params.put("clientId", "test-client");
-        params.put("tlsCertFile", "/path/to/cert.pem");
-        params.put("tlsKeyFile", "/path/to/key.pem");
-        params.put("issuerUrl", "http://localhost");
-        params.put("audience", "test-audience");
-        params.put("scope", "test-scope");
-        params.put("autoCertRefreshDuration", "PT300S");
-        ObjectMapper mapper = new ObjectMapper();
-        String authParams = mapper.writeValueAsString(params);
-        this.auth.configure(authParams);
-        assertNotNull(this.auth.flow);
-        assertEquals(this.auth.flow.getClass(), TlsClientAuthFlow.class);
     }
 
     @Test

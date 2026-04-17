@@ -21,9 +21,10 @@ package org.apache.pulsar.client.impl.auth.oauth2;
 import java.net.URL;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.client.api.Authentication;
-import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.DefaultMetadataResolver;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 
 /**
  * Factory class that allows to create {@link Authentication} instances
@@ -111,6 +112,18 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
+         * Optional token endpoint auth method.
+         * Defaults to {@code client_secret_post}.
+         *
+         * @param tokenEndpointAuthMethod the token endpoint auth method
+         * @return the builder
+         */
+        public ClientCredentialsBuilder tokenEndpointAuthMethod(TokenEndpointAuthMethod tokenEndpointAuthMethod) {
+            this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
+            return this;
+        }
+
+        /**
          * Required issuer URL.
          *
          * @param issuerUrl the issuer URL
@@ -122,7 +135,8 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
-         * Required (when using client_secret) credentials URL.
+         * Required credentials URL.
+         * Only used by {@code client_secret_post}
          *
          * @param credentialsUrl the credentials URL
          * @return the builder
@@ -133,7 +147,8 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
-         * Required (when using tls_client_auth) path to the file for a client certificate.
+         * Optional path to the file for a client certificate.
+         * Required when {@code tokenEndpointAuthMethod} is {@code tls_client_auth}
          *
          * @param tlsCertFile the path to the file for a client certificate
          * @return the builder
@@ -144,7 +159,8 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
-         * Required (when using tls_client_auth) path to the file for a client private key.
+         * Optional path to the file for a client private key.
+         * Required when {@code tokenEndpointAuthMethod} is {@code tls_client_auth}
          *
          * @param tlsKeyFile the path to the file for a client private key
          * @return the builder
@@ -156,7 +172,7 @@ public final class AuthenticationFactoryOAuth2 {
 
         /**
          * Optional client identifier issued by the authorization server.
-         * This parameter can only be set when tls_client_auth.
+         * Only used by {@code tls_client_auth}.
          * Defaults to {@code pulsar-client} when not provided.
          *
          * @param clientId the client identifier
@@ -164,18 +180,6 @@ public final class AuthenticationFactoryOAuth2 {
          */
         public ClientCredentialsBuilder clientId(String clientId) {
             this.clientId = clientId;
-            return this;
-        }
-
-        /**
-         * Optional token endpoint auth method.
-         * Defaults to {@code client_secret_post}.
-         *
-         * @param tokenEndpointAuthMethod the token endpoint auth method
-         * @return the builder
-         */
-        public ClientCredentialsBuilder tokenEndpointAuthMethod(TokenEndpointAuthMethod tokenEndpointAuthMethod) {
-            this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
             return this;
         }
 
@@ -250,8 +254,7 @@ public final class AuthenticationFactoryOAuth2 {
         }
 
         /**
-         * Optional Certificate refresh interval in seconds
-         * This parameter can only be set when tls_client_auth.
+         * Optional certificate refresh interval.
          *
          * @param autoCertRefreshDuration the Certificate refresh interval
          * @return the builder
@@ -311,9 +314,15 @@ public final class AuthenticationFactoryOAuth2 {
                         .connectTimeout(connectTimeout)
                         .readTimeout(readTimeout)
                         .trustCertsFilePath(trustCertsFilePath)
+                        .certFile(tlsCertFile)
+                        .keyFile(tlsKeyFile)
+                        .autoCertRefreshDuration(autoCertRefreshDuration)
                         .wellKnownMetadataPath(wellKnownMetadataPath)
                         .build();
             } else {
+                if (StringUtils.isBlank(tlsCertFile) || StringUtils.isBlank(tlsKeyFile)) {
+                    throw new IllegalArgumentException("Required configuration parameters: tlsCertFile, tlsKeyFile");
+                }
                 flow = TlsClientAuthFlow.builder()
                         .issuerUrl(issuerUrl)
                         .clientId(clientId)

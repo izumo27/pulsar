@@ -33,13 +33,12 @@ public class TlsClientAuthFlowTest {
         params.put("tlsKeyFile", "/path/to/key.pem");
         params.put("issuerUrl", "http://localhost");
         params.put("scope", "http://localhost");
-        TlsClientAuthFlow flow = TlsClientAuthFlow.fromParameters(params);
-        try {
+        OAuth2MockHttpClient.withMockedSslFactory(() -> {
+            TlsClientAuthFlow flow = TlsClientAuthFlow.fromParameters(params);
             Field clientIdField = flow.getClass().getDeclaredField("clientId");
             clientIdField.setAccessible(true);
             assertEquals((String) clientIdField.get(flow), "pulsar-client");
-        } finally {
             flow.close();
-        }
+        });
     }
 }

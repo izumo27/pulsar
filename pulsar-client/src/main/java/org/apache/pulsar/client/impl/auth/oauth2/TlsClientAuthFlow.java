@@ -22,26 +22,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pulsar.PulsarVersion;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.ClientCredentialsExchangeRequest;
-import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenClient;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenExchangeException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenResult;
-import org.apache.pulsar.client.util.ExecutorProvider;
-import org.apache.pulsar.client.util.PulsarHttpAsyncSslEngineFactory;
-import org.apache.pulsar.common.util.PulsarSslConfiguration;
-import org.apache.pulsar.common.util.PulsarSslFactory;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.asynchttpclient.SslEngineFactory;
 
 /**
  * Implementation of OAuth 2.0 Client TLS Authentication flow.
@@ -52,31 +40,22 @@ import org.asynchttpclient.SslEngineFactory;
 class TlsClientAuthFlow extends FlowBase {
     public static final String CONFIG_PARAM_ISSUER_URL = "issuerUrl";
     public static final String CONFIG_PARAM_CLIENT_ID = "clientId";
-    public static final String CONFIG_PARAM_CERT_FILE = "tlsCertFile";
-    public static final String CONFIG_PARAM_KEY_FILE = "tlsKeyFile";
+    public static final String CONFIG_PARAM_CERT_FILE = FlowBase.CONFIG_PARAM_CERT_FILE;
+    public static final String CONFIG_PARAM_KEY_FILE = FlowBase.CONFIG_PARAM_KEY_FILE;
     public static final String CONFIG_PARAM_AUDIENCE = "audience";
     public static final String CONFIG_PARAM_SCOPE = "scope";
-    public static final String CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION = "autoCertRefreshDuration";
+    public static final String CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION =
+            FlowBase.CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION;
 
-    private static final Duration DEFAULT_AUTO_CERT_REFRESH_DURATION = Duration.ofSeconds(300);
     private static final String DEFAULT_CLIENT_ID = "pulsar-client";
 
     private static final long serialVersionUID = 1L;
 
     private final String clientId;
-    private final String certFile;
-    private final String keyFile;
     private final String audience;
     private final String scope;
-    private final long autoCertRefreshSeconds; // Certificate refresh interval in seconds
-    private final Duration connectTimeout;
-    private final Duration readTimeout;
-    private final String trustCertsFilePath;
 
     private transient TokenClient exchanger;
-    private transient ScheduledExecutorService scheduler;
-    private transient PulsarSslFactory sslFactory;
-    private transient AsyncHttpClient tokenHttpClient;
 
     private boolean initialized = false;
 
@@ -84,17 +63,11 @@ class TlsClientAuthFlow extends FlowBase {
     public TlsClientAuthFlow(URL issuerUrl, String clientId, String certFile, String keyFile, String audience,
                              String scope, Duration connectTimeout, Duration readTimeout, String trustCertsFilePath,
                              String wellKnownMetadataPath, Duration autoCertRefreshDuration) {
-        super(issuerUrl, connectTimeout, readTimeout, trustCertsFilePath, wellKnownMetadataPath);
+        super(issuerUrl, connectTimeout, readTimeout, trustCertsFilePath, certFile, keyFile, autoCertRefreshDuration,
+                wellKnownMetadataPath);
         this.clientId = clientId == null ? DEFAULT_CLIENT_ID : clientId;
-        this.certFile = certFile;
-        this.keyFile = keyFile;
         this.audience = audience;
         this.scope = scope;
-        this.connectTimeout = connectTimeout;
-        this.readTimeout = readTimeout;
-        this.trustCertsFilePath = trustCertsFilePath;
-        this.autoCertRefreshSeconds = getParameterDurationToSeconds(CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION,
-                autoCertRefreshDuration, DEFAULT_AUTO_CERT_REFRESH_DURATION);
     }
 
     /**
@@ -140,71 +113,9 @@ class TlsClientAuthFlow extends FlowBase {
         assert this.metadata != null;
 
         URL tokenUrl = this.metadata.getTokenEndpoint();
-        TlsHttpClientContext tlsHttpClientContext = createTlsHttpClientContext(tokenUrl.getHost());
-        this.tokenHttpClient = tlsHttpClientContext.httpClient();
-        this.sslFactory = tlsHttpClientContext.sslFactory();
-
-        this.exchanger = new TokenClient(tokenUrl, this.tokenHttpClient);
-
-        if (sslFactory != null && autoCertRefreshSeconds > 0) {
-            scheduler = Executors.newSingleThreadScheduledExecutor(new ExecutorProvider
-                            .ExtendedThreadFactory("tls-cert-refresher"));
-            scheduler.scheduleAtFixedRate(this::refreshSslContext,
-                autoCertRefreshSeconds, autoCertRefreshSeconds, TimeUnit.SECONDS);
-
-            log.info("Scheduled TLS certificate refresh every {} seconds", autoCertRefreshSeconds);
-        }
+        this.exchanger = new TokenClient(tokenUrl, httpClient);
 
         initialized = true;
-    }
-
-    private PulsarSslConfiguration buildSslConfiguration() {
-        return PulsarSslConfiguration.builder()
-                .tlsCertificateFilePath(certFile)
-                .tlsKeyFilePath(keyFile)
-                .tlsTrustCertsFilePath(trustCertsFilePath)
-                .allowInsecureConnection(false)
-                .serverMode(false)
-                .isHttps(true)
-                .build();
-    }
-
-    private TlsHttpClientContext createTlsHttpClientContext(String hostname) throws PulsarClientException {
-        try {
-            PulsarSslConfiguration sslConfiguration = buildSslConfiguration();
-            PulsarSslFactory sslFactory = new org.apache.pulsar.common.util.DefaultPulsarSslFactory();
-            sslFactory.initialize(sslConfiguration);
-            sslFactory.createInternalSslContext();
-
-            DefaultAsyncHttpClientConfig.Builder confBuilder = new DefaultAsyncHttpClientConfig.Builder();
-            confBuilder.setCookieStore(null);
-            confBuilder.setUseProxyProperties(true);
-            confBuilder.setFollowRedirect(true);
-            confBuilder.setConnectTimeout(
-                    getParameterDurationToMillis(
-                            CONFIG_PARAM_CONNECT_TIMEOUT, connectTimeout, DEFAULT_CONNECT_TIMEOUT));
-            confBuilder.setReadTimeout(
-                    getParameterDurationToMillis(CONFIG_PARAM_READ_TIMEOUT, readTimeout, DEFAULT_READ_TIMEOUT));
-            confBuilder.setUserAgent(String.format("Pulsar-Java-v%s", PulsarVersion.getVersion()));
-            SslEngineFactory sslEngineFactory = new PulsarHttpAsyncSslEngineFactory(sslFactory, hostname);
-            confBuilder.setSslEngineFactory(sslEngineFactory);
-
-            return new TlsHttpClientContext(new DefaultAsyncHttpClient(confBuilder.build()), sslFactory);
-        } catch (Exception e) {
-            throw new PulsarClientException.InvalidConfigurationException(e);
-        }
-    }
-
-    private void refreshSslContext() {
-        if (this.sslFactory == null) {
-            return;
-        }
-        try {
-            this.sslFactory.update();
-            log.debug("Successfully refreshed SSL context");
-        } catch (Exception e) {
-            log.error("Failed to refresh SSL context", e);
-        }
     }
 
     public TokenResult authenticate() throws PulsarClientException {
@@ -232,15 +143,8 @@ class TlsClientAuthFlow extends FlowBase {
     @Override
     public void close() throws Exception {
         super.close();
-        if (scheduler != null) {
-            scheduler.shutdownNow();
-        }
         if (exchanger != null) {
             exchanger.close();
-        } else if (tokenHttpClient != null) {
-            tokenHttpClient.close();
         }
     }
-
-    private record TlsHttpClientContext(AsyncHttpClient httpClient, PulsarSslFactory sslFactory) { }
 }
