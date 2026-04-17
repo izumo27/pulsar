@@ -21,8 +21,8 @@ package org.apache.pulsar.client.impl.auth.oauth2;
 import java.net.URL;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.client.api.Authentication;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.DefaultMetadataResolver;
 
 /**
@@ -93,6 +93,7 @@ public final class AuthenticationFactoryOAuth2 {
 
         private URL issuerUrl;
         private URL credentialsUrl;
+        private TokenEndpointAuthMethod tokenEndpointAuthMethod = TokenEndpointAuthMethod.CLIENT_SECRET_POST;
         private String clientId;
         private String tlsCertFile;
         private String tlsKeyFile;
@@ -163,6 +164,18 @@ public final class AuthenticationFactoryOAuth2 {
          */
         public ClientCredentialsBuilder clientId(String clientId) {
             this.clientId = clientId;
+            return this;
+        }
+
+        /**
+         * Optional token endpoint auth method.
+         * Defaults to {@code client_secret_post}.
+         *
+         * @param tokenEndpointAuthMethod the token endpoint auth method
+         * @return the builder
+         */
+        public ClientCredentialsBuilder tokenEndpointAuthMethod(TokenEndpointAuthMethod tokenEndpointAuthMethod) {
+            this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
             return this;
         }
 
@@ -289,7 +302,18 @@ public final class AuthenticationFactoryOAuth2 {
          */
         public Authentication build() {
             Flow flow;
-            if (StringUtils.isNotBlank(tlsCertFile) && StringUtils.isNotBlank(tlsKeyFile)) {
+            if (tokenEndpointAuthMethod == TokenEndpointAuthMethod.CLIENT_SECRET_POST) {
+                flow = ClientCredentialsFlow.builder()
+                        .issuerUrl(issuerUrl)
+                        .privateKey(credentialsUrl == null ? null : credentialsUrl.toExternalForm())
+                        .audience(audience)
+                        .scope(scope)
+                        .connectTimeout(connectTimeout)
+                        .readTimeout(readTimeout)
+                        .trustCertsFilePath(trustCertsFilePath)
+                        .wellKnownMetadataPath(wellKnownMetadataPath)
+                        .build();
+            } else {
                 flow = TlsClientAuthFlow.builder()
                         .issuerUrl(issuerUrl)
                         .clientId(clientId)
@@ -302,17 +326,6 @@ public final class AuthenticationFactoryOAuth2 {
                         .trustCertsFilePath(trustCertsFilePath)
                         .wellKnownMetadataPath(wellKnownMetadataPath)
                         .autoCertRefreshDuration(autoCertRefreshDuration)
-                        .build();
-            } else {
-                flow = ClientCredentialsFlow.builder()
-                        .issuerUrl(issuerUrl)
-                        .privateKey(credentialsUrl == null ? null : credentialsUrl.toExternalForm())
-                        .audience(audience)
-                        .scope(scope)
-                        .connectTimeout(connectTimeout)
-                        .readTimeout(readTimeout)
-                        .trustCertsFilePath(trustCertsFilePath)
-                        .wellKnownMetadataPath(wellKnownMetadataPath)
                         .build();
             }
             return new AuthenticationOAuth2(flow, earlyTokenRefreshPercent, scheduler);

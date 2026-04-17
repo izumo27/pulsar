@@ -48,8 +48,9 @@ public class TokenClientTest {
                 .clientId("test-client-id")
                 .clientSecret("test-client-secret")
                 .scope("test-scope")
+                .authMethod(TokenEndpointAuthMethod.CLIENT_SECRET_POST)
                 .build();
-        String body = tokenClient.buildClientCredentialsBody(request, true);
+        String body = tokenClient.buildClientCredentialsBody(request);
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -79,8 +80,9 @@ public class TokenClientTest {
         ClientCredentialsExchangeRequest request = ClientCredentialsExchangeRequest.builder()
                 .clientId("test-client-id")
                 .clientSecret("test-client-secret")
+                .authMethod(TokenEndpointAuthMethod.CLIENT_SECRET_POST)
                 .build();
-        String body = tokenClient.buildClientCredentialsBody(request, true);
+        String body = tokenClient.buildClientCredentialsBody(request);
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -111,8 +113,9 @@ public class TokenClientTest {
                 .clientId("test-client-id")
                 .audience("test-audience")
                 .scope("test-scope")
+                .authMethod(TokenEndpointAuthMethod.TLS_CLIENT_AUTH)
                 .build();
-        String body = tokenClient.buildClientCredentialsBody(request, false);
+        String body = tokenClient.buildClientCredentialsBody(request);
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -128,7 +131,7 @@ public class TokenClientTest {
         tokenResult.setAccessToken("test-access-token");
         tokenResult.setIdToken("test-id");
         when(response.getResponseBodyAsBytes()).thenReturn(new Gson().toJson(tokenResult).getBytes());
-        TokenResult tr = tokenClient.exchangeTlsClientAuth(request);
+        TokenResult tr = tokenClient.exchangeClientCredentials(request);
         assertNotNull(tr);
     }
 
@@ -141,8 +144,9 @@ public class TokenClientTest {
         TokenClient tokenClient = new TokenClient(url, defaultAsyncHttpClient);
         ClientCredentialsExchangeRequest request = ClientCredentialsExchangeRequest.builder()
                 .clientId("test-client-id")
+                .authMethod(TokenEndpointAuthMethod.TLS_CLIENT_AUTH)
                 .build();
-        String body = tokenClient.buildClientCredentialsBody(request, false);
+        String body = tokenClient.buildClientCredentialsBody(request);
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -158,7 +162,7 @@ public class TokenClientTest {
         tokenResult.setAccessToken("test-access-token");
         tokenResult.setIdToken("test-id");
         when(response.getResponseBodyAsBytes()).thenReturn(new Gson().toJson(tokenResult).getBytes());
-        TokenResult tr = tokenClient.exchangeTlsClientAuth(request);
+        TokenResult tr = tokenClient.exchangeClientCredentials(request);
         assertNotNull(tr);
     }
 }

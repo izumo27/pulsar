@@ -34,6 +34,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.ClientCredentialsExchangeRequest;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.ClientCredentialsExchanger;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenClient;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenExchangeException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenResult;
@@ -157,6 +158,7 @@ class ClientCredentialsFlow extends FlowBase {
                 .clientSecret(keyFile.getClientSecret())
                 .audience(this.audience)
                 .scope(this.scope)
+                .authMethod(TokenEndpointAuthMethod.CLIENT_SECRET_POST)
                 .build();
         TokenResult tr;
         if (!initialized) {

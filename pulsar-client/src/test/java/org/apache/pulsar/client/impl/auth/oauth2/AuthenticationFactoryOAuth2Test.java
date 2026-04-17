@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import org.apache.pulsar.client.api.Authentication;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.testng.annotations.Test;
 
 public class AuthenticationFactoryOAuth2Test {
@@ -60,6 +61,7 @@ public class AuthenticationFactoryOAuth2Test {
         Duration autoCertRefreshDuration = Duration.ofSeconds(123);
         try (Authentication authentication =
                      AuthenticationFactoryOAuth2.clientCredentialsBuilder().issuerUrl(issuerUrl)
+                             .tokenEndpointAuthMethod(TokenEndpointAuthMethod.TLS_CLIENT_AUTH)
                              .clientId(clientId)
                              .tlsCertFile(tlsCertFile)
                              .tlsKeyFile(tlsKeyFile)

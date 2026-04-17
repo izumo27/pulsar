@@ -41,6 +41,7 @@ import lombok.Cleanup;
 import org.apache.pulsar.client.api.AuthenticationDataProvider;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.DefaultMetadataResolver;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -228,6 +229,8 @@ public class AuthenticationOAuth2Test {
     public void testConfigureWithTlsClientAuth() throws Exception {
         Map<String, String> params = new HashMap<>();
         params.put("type", "client_credentials");
+        params.put(AuthenticationOAuth2.CONFIG_PARAM_TOKEN_ENDPOINT_AUTH_METHOD,
+                TokenEndpointAuthMethod.TLS_CLIENT_AUTH.value());
         params.put("clientId", "test-client");
         params.put("tlsCertFile", "/path/to/cert.pem");
         params.put("tlsKeyFile", "/path/to/key.pem");
@@ -259,6 +262,8 @@ public class AuthenticationOAuth2Test {
     public void testConfigureWithTlsClientAuthAndOptionalParams() throws Exception {
         Map<String, String> params = new HashMap<>();
         params.put("type", "client_credentials");
+        params.put(AuthenticationOAuth2.CONFIG_PARAM_TOKEN_ENDPOINT_AUTH_METHOD,
+                TokenEndpointAuthMethod.TLS_CLIENT_AUTH.value());
         params.put("clientId", "test-client");
         params.put("tlsCertFile", "/path/to/cert.pem");
         params.put("tlsKeyFile", "/path/to/key.pem");

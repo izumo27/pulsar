@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pulsar.PulsarVersion;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.ClientCredentialsExchangeRequest;
+import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenClient;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenExchangeException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenResult;
@@ -212,13 +213,14 @@ class TlsClientAuthFlow extends FlowBase {
                 .clientId(this.clientId)
                 .audience(this.audience)
                 .scope(this.scope)
+                .authMethod(TokenEndpointAuthMethod.TLS_CLIENT_AUTH)
                 .build();
         TokenResult tr;
         if (!initialized) {
             initialize();
         }
         try {
-            tr = this.exchanger.exchangeTlsClientAuth(req);
+            tr = this.exchanger.exchangeClientCredentials(req);
         } catch (TokenExchangeException | IOException e) {
             throw new PulsarClientException.AuthenticationException("Unable to obtain an access token: "
                     + e.getMessage());
