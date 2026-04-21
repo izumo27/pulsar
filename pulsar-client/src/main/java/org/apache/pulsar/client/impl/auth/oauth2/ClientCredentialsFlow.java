@@ -91,7 +91,7 @@ class ClientCredentialsFlow extends FlowBase {
         Duration readTimeout = parseParameterDuration(params, CONFIG_PARAM_READ_TIMEOUT);
         String trustCertsFilePath = params.get(CONFIG_PARAM_TRUST_CERTS_FILE_PATH);
         String certFile = params.get(CONFIG_PARAM_CERT_FILE);
-        String keyFile = params.get(CONFIG_PARAM_KEY_FILE);
+        String keyFile = params.get(CONFIG_PARAM_TLS_KEY_FILE);
         Duration autoCertRefreshDuration = parseParameterDuration(params, CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION);
         String wellKnownMetadataPath = params.get(CONFIG_PARAM_WELL_KNOWN_METADATA_PATH);
 

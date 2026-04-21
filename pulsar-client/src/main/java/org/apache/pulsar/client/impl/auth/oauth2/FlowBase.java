@@ -56,7 +56,7 @@ abstract class FlowBase implements Flow {
     public static final String CONFIG_PARAM_READ_TIMEOUT = "readTimeout";
     public static final String CONFIG_PARAM_TRUST_CERTS_FILE_PATH = "trustCertsFilePath";
     public static final String CONFIG_PARAM_CERT_FILE = "tlsCertFile";
-    public static final String CONFIG_PARAM_KEY_FILE = "tlsKeyFile";
+    public static final String CONFIG_PARAM_TLS_KEY_FILE = "tlsKeyFile";
     public static final String CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION = "autoCertRefreshDuration";
     public static final String CONFIG_PARAM_WELL_KNOWN_METADATA_PATH = "wellKnownMetadataPath";
 
@@ -97,7 +97,13 @@ abstract class FlowBase implements Flow {
         confBuilder.setReadTimeout(
                 getParameterDurationToMillis(CONFIG_PARAM_READ_TIMEOUT, readTimeout, DEFAULT_READ_TIMEOUT));
         confBuilder.setUserAgent(String.format("Pulsar-Java-v%s", PulsarVersion.getVersion()));
-        if (StringUtils.isNotBlank(certFile) && StringUtils.isNotBlank(keyFile)) {
+        boolean hasCertFile = StringUtils.isNotBlank(certFile);
+        boolean hasKeyFile = StringUtils.isNotBlank(keyFile);
+        if (hasCertFile != hasKeyFile) {
+            throw new IllegalArgumentException("Invalid TLS client certificate configuration: " + CONFIG_PARAM_CERT_FILE
+                    + " and " + CONFIG_PARAM_TLS_KEY_FILE + " must be provided together");
+        }
+        if (hasCertFile && hasKeyFile) {
             try {
                 PulsarSslConfiguration sslConfiguration = PulsarSslConfiguration.builder()
                         .tlsCertificateFilePath(certFile)
@@ -127,7 +133,7 @@ abstract class FlowBase implements Flow {
         return new DefaultAsyncHttpClient(confBuilder.build());
     }
 
-    protected void scheduleSslContextRefreshIfEnabled(long refreshSeconds) {
+    private void scheduleSslContextRefreshIfEnabled(long refreshSeconds) {
         if (sslFactory == null || refreshSeconds <= 0 || sslRefreshScheduler != null) {
             return;
         }
@@ -138,7 +144,7 @@ abstract class FlowBase implements Flow {
         log.info("Scheduled TLS certificate refresh every {} seconds", refreshSeconds);
     }
 
-    protected void refreshSslContext() {
+    private void refreshSslContext() {
         if (this.sslFactory == null) {
             return;
         }
@@ -225,5 +231,8 @@ abstract class FlowBase implements Flow {
             sslRefreshScheduler.shutdownNow();
         }
         httpClient.close();
+        if (sslFactory != null) {
+            sslFactory.close();
+        }
     }
 }

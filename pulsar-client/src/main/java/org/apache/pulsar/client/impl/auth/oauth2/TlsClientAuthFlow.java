@@ -40,8 +40,6 @@ import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenResult;
 class TlsClientAuthFlow extends FlowBase {
     public static final String CONFIG_PARAM_ISSUER_URL = "issuerUrl";
     public static final String CONFIG_PARAM_CLIENT_ID = "clientId";
-    public static final String CONFIG_PARAM_CERT_FILE = FlowBase.CONFIG_PARAM_CERT_FILE;
-    public static final String CONFIG_PARAM_KEY_FILE = FlowBase.CONFIG_PARAM_KEY_FILE;
     public static final String CONFIG_PARAM_AUDIENCE = "audience";
     public static final String CONFIG_PARAM_SCOPE = "scope";
     public static final String CONFIG_PARAM_AUTO_CERT_REFRESH_DURATION =
@@ -82,7 +80,7 @@ class TlsClientAuthFlow extends FlowBase {
         // Keep sending client_id in token request for RFC compatibility by applying a default value.
         String clientId = params.getOrDefault(CONFIG_PARAM_CLIENT_ID, DEFAULT_CLIENT_ID);
         String certFile = parseParameterString(params, CONFIG_PARAM_CERT_FILE);
-        String keyFile = parseParameterString(params, CONFIG_PARAM_KEY_FILE);
+        String keyFile = parseParameterString(params, CONFIG_PARAM_TLS_KEY_FILE);
         // These are optional parameters, so we allow null values
         String scope = params.get(CONFIG_PARAM_SCOPE);
         String audience = params.get(CONFIG_PARAM_AUDIENCE);
