@@ -56,10 +56,13 @@ public class TokenClient implements ClientCredentialsExchanger {
      * @return Generate the final request body from a map.
      */
     String buildClientCredentialsBody(ClientCredentialsExchangeRequest req) {
+        TokenEndpointAuthMethod authMethod = req.getAuthMethod() == null
+                ? TokenEndpointAuthMethod.CLIENT_SECRET_POST
+                : req.getAuthMethod();
         Map<String, String> bodyMap = new TreeMap<>();
         bodyMap.put("grant_type", "client_credentials");
         bodyMap.put("client_id", req.getClientId());
-        if (req.getAuthMethod() == TokenEndpointAuthMethod.CLIENT_SECRET_POST) {
+        if (authMethod == TokenEndpointAuthMethod.CLIENT_SECRET_POST) {
             bodyMap.put("client_secret", req.getClientSecret());
         }
         // Only set audience and scope if they are non-empty.

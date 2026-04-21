@@ -163,10 +163,12 @@ public class AuthenticationOAuth2 implements Authentication, EncodedAuthenticati
             TokenEndpointAuthMethod authMethod = TokenEndpointAuthMethod.fromValue(
                     params.getOrDefault(CONFIG_PARAM_TOKEN_ENDPOINT_AUTH_METHOD,
                             TokenEndpointAuthMethod.CLIENT_SECRET_POST.value()));
-            if (authMethod == TokenEndpointAuthMethod.TLS_CLIENT_AUTH) {
+            if (authMethod == TokenEndpointAuthMethod.CLIENT_SECRET_POST) {
+                this.flow = ClientCredentialsFlow.fromParameters(params);
+            } else if (authMethod == TokenEndpointAuthMethod.TLS_CLIENT_AUTH) {
                 this.flow = TlsClientAuthFlow.fromParameters(params);
             } else {
-                this.flow = ClientCredentialsFlow.fromParameters(params);
+                throw new IllegalArgumentException("Unsupported auth method: " + authMethod);
             }
         } else {
             throw new IllegalArgumentException("Unsupported authentication type: " + type);

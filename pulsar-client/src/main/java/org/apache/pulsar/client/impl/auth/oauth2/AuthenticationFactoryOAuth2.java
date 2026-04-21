@@ -319,7 +319,7 @@ public final class AuthenticationFactoryOAuth2 {
                         .autoCertRefreshDuration(autoCertRefreshDuration)
                         .wellKnownMetadataPath(wellKnownMetadataPath)
                         .build();
-            } else {
+            } else if (tokenEndpointAuthMethod == TokenEndpointAuthMethod.TLS_CLIENT_AUTH) {
                 if (StringUtils.isBlank(tlsCertFile) || StringUtils.isBlank(tlsKeyFile)) {
                     throw new IllegalArgumentException("Required configuration parameters: tlsCertFile, tlsKeyFile");
                 }
@@ -336,6 +336,8 @@ public final class AuthenticationFactoryOAuth2 {
                         .wellKnownMetadataPath(wellKnownMetadataPath)
                         .autoCertRefreshDuration(autoCertRefreshDuration)
                         .build();
+            } else {
+                throw new IllegalArgumentException("Unsupported auth method: " + tokenEndpointAuthMethod);
             }
             return new AuthenticationOAuth2(flow, earlyTokenRefreshPercent, scheduler);
         }

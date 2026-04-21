@@ -43,6 +43,7 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.DefaultMetadataResolver;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenEndpointAuthMethod;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenResult;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -62,6 +63,13 @@ public class AuthenticationOAuth2Test {
         this.clock = new MockClock(Instant.EPOCH, ZoneOffset.UTC);
         this.flow = mock(Flow.class);
         this.auth = new AuthenticationOAuth2(flow, this.clock, 1, null);
+    }
+
+    @AfterMethod(alwaysRun = true)
+    public void after() throws Exception {
+        if (this.auth != null) {
+            this.auth.close();
+        }
     }
 
     @Test

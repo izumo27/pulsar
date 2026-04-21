@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.Map;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.ClientCredentialsExchangeRequest;
 import org.apache.pulsar.client.impl.auth.oauth2.protocol.TokenClient;
@@ -63,7 +64,7 @@ class TlsClientAuthFlow extends FlowBase {
                              String wellKnownMetadataPath, Duration autoCertRefreshDuration) {
         super(issuerUrl, connectTimeout, readTimeout, trustCertsFilePath, certFile, keyFile, autoCertRefreshDuration,
                 wellKnownMetadataPath);
-        this.clientId = clientId == null ? DEFAULT_CLIENT_ID : clientId;
+        this.clientId = StringUtils.defaultIfBlank(clientId, DEFAULT_CLIENT_ID);
         this.audience = audience;
         this.scope = scope;
     }

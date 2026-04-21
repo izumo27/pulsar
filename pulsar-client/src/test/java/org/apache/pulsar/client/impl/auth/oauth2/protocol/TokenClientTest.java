@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.client.impl.auth.oauth2.protocol;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertNotNull;
@@ -51,6 +52,12 @@ public class TokenClientTest {
                 .authMethod(TokenEndpointAuthMethod.CLIENT_SECRET_POST)
                 .build();
         String body = tokenClient.buildClientCredentialsBody(request);
+        assertThat(body)
+                .contains("grant_type=")
+                .contains("client_id=")
+                .contains("client_secret=")
+                .contains("audience=")
+                .contains("scope=");
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -80,9 +87,12 @@ public class TokenClientTest {
         ClientCredentialsExchangeRequest request = ClientCredentialsExchangeRequest.builder()
                 .clientId("test-client-id")
                 .clientSecret("test-client-secret")
-                .authMethod(TokenEndpointAuthMethod.CLIENT_SECRET_POST)
                 .build();
         String body = tokenClient.buildClientCredentialsBody(request);
+        assertThat(body)
+                .contains("grant_type=")
+                .contains("client_id=")
+                .contains("client_secret=");
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -116,6 +126,12 @@ public class TokenClientTest {
                 .authMethod(TokenEndpointAuthMethod.TLS_CLIENT_AUTH)
                 .build();
         String body = tokenClient.buildClientCredentialsBody(request);
+        assertThat(body)
+                .contains("grant_type=")
+                .contains("client_id=")
+                .contains("audience=")
+                .contains("scope=")
+                .doesNotContain("client_secret=");
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
@@ -147,6 +163,10 @@ public class TokenClientTest {
                 .authMethod(TokenEndpointAuthMethod.TLS_CLIENT_AUTH)
                 .build();
         String body = tokenClient.buildClientCredentialsBody(request);
+        assertThat(body)
+                .contains("grant_type=")
+                .contains("client_id=")
+                .doesNotContain("client_secret=");
         BoundRequestBuilder boundRequestBuilder = mock(BoundRequestBuilder.class);
         Response response = mock(Response.class);
         ListenableFuture<Response> listenableFuture = mock(ListenableFuture.class);
