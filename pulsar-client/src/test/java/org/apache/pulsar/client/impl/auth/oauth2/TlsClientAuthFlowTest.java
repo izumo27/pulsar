@@ -19,7 +19,6 @@
 package org.apache.pulsar.client.impl.auth.oauth2;
 
 import static org.testng.Assert.assertEquals;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import org.testng.annotations.Test;
@@ -35,9 +34,7 @@ public class TlsClientAuthFlowTest {
         params.put("scope", "http://localhost");
         OAuth2MockHttpClient.withMockedSslFactory(() -> {
             TlsClientAuthFlow flow = TlsClientAuthFlow.fromParameters(params);
-            Field clientIdField = flow.getClass().getDeclaredField("clientId");
-            clientIdField.setAccessible(true);
-            assertEquals((String) clientIdField.get(flow), "pulsar-client");
+            assertEquals(flow.getClientId(), "pulsar-client");
             flow.close();
         });
     }

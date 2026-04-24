@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.client.impl.auth.oauth2;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -145,5 +146,10 @@ class TlsClientAuthFlow extends FlowBase {
         if (exchanger != null) {
             exchanger.close();
         }
+    }
+
+    @VisibleForTesting
+    String getClientId() {
+        return clientId;
     }
 }
