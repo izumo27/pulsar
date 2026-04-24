@@ -138,7 +138,7 @@ abstract class FlowBase implements Flow {
             return;
         }
         sslRefreshScheduler = Executors.newSingleThreadScheduledExecutor(
-                new ExecutorProvider.ExtendedThreadFactory("oauth2-tls-cert-refresher"));
+                new ExecutorProvider.ExtendedThreadFactory("oauth2-tls-cert-refresher", true));
         sslRefreshScheduler.scheduleWithFixedDelay(this::refreshSslContext,
                 refreshSeconds, refreshSeconds, TimeUnit.SECONDS);
         log.info("Scheduled TLS certificate refresh every {} seconds", refreshSeconds);
