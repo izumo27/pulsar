@@ -141,7 +141,7 @@ abstract class FlowBase implements Flow {
                 new ExecutorProvider.ExtendedThreadFactory("oauth2-tls-cert-refresher", true));
         sslRefreshScheduler.scheduleWithFixedDelay(this::refreshSslContext,
                 refreshSeconds, refreshSeconds, TimeUnit.SECONDS);
-        log.info("Scheduled TLS certificate refresh every {} seconds", refreshSeconds);
+        log.info().attr("refreshSeconds", refreshSeconds).log("Scheduled TLS certificate refresh");
     }
 
     private void refreshSslContext() {
@@ -150,11 +150,9 @@ abstract class FlowBase implements Flow {
         }
         try {
             this.sslFactory.update();
-            if (log.isDebugEnabled()) {
-                log.debug("Successfully refreshed SSL context");
-            }
+            log.debug("Successfully refreshed SSL context");
         } catch (Exception e) {
-            log.error("Failed to refresh SSL context", e);
+            log.error().exception(e).log("Failed to refresh SSL context");
         }
     }
 
@@ -169,12 +167,12 @@ abstract class FlowBase implements Flow {
     private Duration getParameterDuration(String name, Duration value, Duration defaultValue) {
         Duration duration;
         if (value == null) {
-                log.debug().attr("name", name)
-                        .attr("defaultValue", defaultValue)
-                        .log("Configuration is using the default value");
+            log.debug().attr("name", name)
+                    .attr("defaultValue", defaultValue)
+                    .log("Configuration is using the default value");
             duration = defaultValue;
         } else {
-                log.debug().attr("name", name).attr("value", value).log("Configuration");
+            log.debug().attr("name", name).attr("value", value).log("Configuration");
             duration = value;
         }
         return duration;
